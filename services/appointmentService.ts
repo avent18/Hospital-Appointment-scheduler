@@ -30,32 +30,34 @@ import {
 export class AppointmentService {
   /**
    * Get all appointments for a specific doctor
-   *
-   * TODO: Implement this method
    */
   getAppointmentsByDoctor(doctorId: string): Appointment[] {
-    // TODO: Implement - filter MOCK_APPOINTMENTS by doctorId
-    throw new Error('Not implemented - getAppointmentsByDoctor');
+    return MOCK_APPOINTMENTS.filter((apt) => apt.doctorId === doctorId);
   }
 
   /**
    * Get appointments for a specific doctor on a specific date
-   *
-   * TODO: Implement this method
    * @param doctorId - The doctor's ID
    * @param date - The date to filter by
    * @returns Array of appointments for that doctor on that date
    */
   getAppointmentsByDoctorAndDate(doctorId: string, date: Date): Appointment[] {
-    // TODO: Implement - filter by doctor AND date
-    // Hint: You'll need to compare dates properly (same day, ignoring time)
-    throw new Error('Not implemented - getAppointmentsByDoctorAndDate');
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return MOCK_APPOINTMENTS.filter((apt) => {
+      if (apt.doctorId !== doctorId) return false;
+
+      const aptStart = new Date(apt.startTime);
+      return aptStart >= startOfDay && aptStart <= endOfDay;
+    });
   }
 
   /**
    * Get appointments for a specific doctor within a date range (for week view)
-   *
-   * TODO: Implement this method
    * @param doctorId - The doctor's ID
    * @param startDate - Start of the date range
    * @param endDate - End of the date range
@@ -66,41 +68,44 @@ export class AppointmentService {
     startDate: Date,
     endDate: Date
   ): Appointment[] {
-    // TODO: Implement - filter by doctor AND date range
-    throw new Error('Not implemented - getAppointmentsByDoctorAndDateRange');
+    return MOCK_APPOINTMENTS.filter((apt) => {
+      if (apt.doctorId !== doctorId) return false;
+
+      const aptStart = new Date(apt.startTime);
+      return aptStart >= startDate && aptStart <= endDate;
+    });
   }
 
   /**
    * Get a populated appointment (with patient and doctor objects)
    *
    * This is useful for display purposes where you need patient/doctor details
-   *
-   * TODO: Implement this helper method
    */
   getPopulatedAppointment(appointment: Appointment): PopulatedAppointment | null {
-    // TODO: Implement - merge appointment with patient and doctor data
-    // Hint: Use getDoctorById and getPatientById from mockData
-    throw new Error('Not implemented - getPopulatedAppointment');
+    const patient = getPatientById(appointment.patientId);
+    const doctor = getDoctorById(appointment.doctorId);
+
+    if (!patient || !doctor) return null;
+
+    return {
+      ...appointment,
+      patient,
+      doctor,
+    };
   }
 
   /**
    * Get all doctors
-   *
-   * TODO: Implement this method
    */
   getAllDoctors(): Doctor[] {
-    // TODO: Implement - return all doctors
-    throw new Error('Not implemented - getAllDoctors');
+    return MOCK_DOCTORS;
   }
 
   /**
    * Get doctor by ID
-   *
-   * TODO: Implement this method
    */
   getDoctorById(id: string): Doctor | undefined {
-    // TODO: Implement - find doctor by ID
-    throw new Error('Not implemented - getDoctorById');
+    return MOCK_DOCTORS.find((doctor) => doctor.id === id);
   }
 
   /**

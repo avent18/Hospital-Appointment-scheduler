@@ -2,19 +2,14 @@
  * DayView Component
  *
  * Displays appointments for a single day in a timeline format.
- *
- * TODO for candidates:
- * 1. Generate time slots (8 AM - 6 PM, 30-minute intervals)
- * 2. Position appointments in their correct time slots
- * 3. Handle appointments that span multiple slots
- * 4. Display appointment details (patient, type, duration)
- * 5. Color-code appointments by type
- * 6. Handle overlapping appointments gracefully
  */
 
 'use client';
 
+import { addMinutes, format, isWithinInterval } from 'date-fns';
 import type { Appointment, Doctor, TimeSlot } from '@/types';
+import { DEFAULT_CALENDAR_CONFIG } from '@/types';
+import { AppointmentCard } from './AppointmentCard';
 
 interface DayViewProps {
   appointments: Appointment[];
@@ -43,33 +38,43 @@ interface DayViewProps {
  */
 export function DayView({ appointments, doctor, date }: DayViewProps) {
   /**
-   * TODO: Generate time slots
-   *
-   * Create an array of TimeSlot objects from 8 AM to 6 PM
-   * with 30-minute intervals
-   *
-   * Hint: You can use a loop or date-fns utilities
+   * Generate time slots from 8 AM to 6 PM with 30-minute intervals
    */
   function generateTimeSlots(): TimeSlot[] {
-    // TODO: Implement time slot generation
-    // Example structure:
-    // return [
-    //   { start: new Date(...8:00), end: new Date(...8:30), label: '8:00 AM' },
-    //   { start: new Date(...8:30), end: new Date(...9:00), label: '8:30 AM' },
-    //   ...
-    // ];
-    return [];
+    const slots: TimeSlot[] = [];
+    const { startHour, endHour, slotDuration } = DEFAULT_CALENDAR_CONFIG;
+
+    let currentTime = new Date(date);
+    currentTime.setHours(startHour, 0, 0, 0);
+
+    while (currentTime.getHours() < endHour) {
+      const endTime = addMinutes(currentTime, slotDuration);
+      slots.push({
+        start: new Date(currentTime),
+        end: new Date(endTime),
+        label: format(currentTime, 'h:mm a'),
+      });
+      currentTime = endTime;
+    }
+
+    return slots;
   }
 
   /**
-   * TODO: Find appointments for a specific time slot
-   *
-   * Given a time slot, find all appointments that overlap with it
+   * Find appointments that overlap with a specific time slot
    */
   function getAppointmentsForSlot(slot: TimeSlot): Appointment[] {
-    // TODO: Implement appointment filtering
-    // Check if appointment.startTime or appointment.endTime falls within the slot
-    return [];
+    return appointments.filter(appointment => {
+      const appointmentStart = new Date(appointment.startTime);
+      const appointmentEnd = new Date(appointment.endTime);
+
+      // Check if appointment overlaps with the slot
+      return (
+        isWithinInterval(appointmentStart, { start: slot.start, end: slot.end }) ||
+        isWithinInterval(appointmentEnd, { start: slot.start, end: slot.end }) ||
+        (appointmentStart <= slot.start && appointmentEnd >= slot.end)
+      );
+    });
   }
 
   const timeSlots = generateTimeSlots();
@@ -79,8 +84,7 @@ export function DayView({ appointments, doctor, date }: DayViewProps) {
       {/* Day header */}
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          {/* TODO: Format date nicely (e.g., "Monday, October 15, 2024") */}
-          {date.toDateString()}
+          {format(date, 'EEEE, MMMM d, yyyy')}
         </h3>
         {doctor && (
           <p className="text-sm text-gray-600">
@@ -91,29 +95,10 @@ export function DayView({ appointments, doctor, date }: DayViewProps) {
 
       {/* Timeline grid */}
       <div className="border border-gray-200 rounded-lg overflow-hidden">
-        {/* TODO: Implement the timeline */}
-        <div className="text-center text-gray-500 py-12">
-          <p>Day View Timeline Goes Here</p>
-          <p className="text-sm mt-2">
-            Implement time slots (8 AM - 6 PM) and position appointments
-          </p>
-
-          {/* Placeholder to show appointments exist */}
-          {appointments.length > 0 && (
-            <div className="mt-4">
-              <p className="text-sm font-medium">
-                {appointments.length} appointment(s) for this day
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* TODO: Replace above with actual timeline implementation */}
-        {/* Example structure:
         <div className="divide-y divide-gray-100">
           {timeSlots.map((slot, index) => (
             <div key={index} className="flex">
-              <div className="w-24 p-2 text-sm text-gray-600">
+              <div className="w-24 p-2 text-sm text-gray-600 bg-gray-50">
                 {slot.label}
               </div>
               <div className="flex-1 p-2 min-h-[60px] relative">
@@ -124,7 +109,6 @@ export function DayView({ appointments, doctor, date }: DayViewProps) {
             </div>
           ))}
         </div>
-        */}
       </div>
 
       {/* Empty state */}
@@ -137,16 +121,4 @@ export function DayView({ appointments, doctor, date }: DayViewProps) {
   );
 }
 
-/**
- * TODO: Create an AppointmentCard component
- *
- * This should be a small, reusable component that displays
- * a single appointment with appropriate styling.
- *
- * Consider:
- * - Show patient name
- * - Show appointment type
- * - Show duration
- * - Color-code by appointment type (use APPOINTMENT_TYPE_CONFIG from types)
- * - Make it visually clear when appointments span multiple slots
- */
+

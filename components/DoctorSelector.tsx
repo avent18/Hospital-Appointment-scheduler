@@ -16,6 +16,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Doctor } from '@/types';
+import { appointmentService } from '@/services/appointmentService';
 
 interface DoctorSelectorProps {
   selectedDoctorId: string;
@@ -41,17 +42,10 @@ export function DoctorSelector({
 }: DoctorSelectorProps) {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
 
-  // TODO: Fetch doctors
+  // Fetch doctors
   useEffect(() => {
-    // Option 1: Use appointmentService to get doctors
-    // const allDoctors = appointmentService.getAllDoctors();
-    // setDoctors(allDoctors);
-
-    // Option 2: Import MOCK_DOCTORS directly
-    // import { MOCK_DOCTORS } from '@/data/mockData';
-    // setDoctors(MOCK_DOCTORS);
-
-    console.log('TODO: Fetch doctors');
+    const allDoctors = appointmentService.getAllDoctors();
+    setDoctors(allDoctors);
   }, []);
 
   // Find currently selected doctor for display
@@ -77,34 +71,7 @@ export function DoctorSelector({
         ))}
       </select>
 
-      {/* Option 2: Custom dropdown (BONUS)
-      <button
-        type="button"
-        className="w-full px-4 py-2 text-sm text-left border rounded-lg"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {selectedDoctor
-          ? `Dr. ${selectedDoctor.name} - ${selectedDoctor.specialty}`
-          : 'Select a doctor...'}
-      </button>
-
-      {isOpen && (
-        <div className="absolute mt-1 w-full bg-white border rounded-lg shadow-lg">
-          {doctors.map((doctor) => (
-            <button
-              key={doctor.id}
-              className="w-full px-4 py-2 text-left hover:bg-gray-100"
-              onClick={() => {
-                onDoctorChange(doctor.id);
-                setIsOpen(false);
-              }}
-            >
-              Dr. {doctor.name} - {doctor.specialty}
-            </button>
-          ))}
-        </div>
-      )}
-      */}
+      
     </div>
   );
 }

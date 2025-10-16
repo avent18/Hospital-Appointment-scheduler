@@ -2,19 +2,14 @@
  * WeekView Component
  *
  * Displays appointments for a week (Monday - Sunday) in a grid format.
- *
- * TODO for candidates:
- * 1. Generate a 7-day grid (Monday through Sunday)
- * 2. Generate time slots for each day
- * 3. Position appointments in the correct day and time
- * 4. Make it responsive (may need horizontal scroll on mobile)
- * 5. Color-code appointments by type
- * 6. Handle overlapping appointments
  */
 
 'use client';
 
-import type { Appointment, Doctor } from '@/types';
+import { addDays, format, isSameDay, isWithinInterval } from 'date-fns';
+import type { Appointment, Doctor, TimeSlot } from '@/types';
+import { DEFAULT_CALENDAR_CONFIG } from '@/types';
+import { AppointmentCard } from './AppointmentCard';
 
 interface WeekViewProps {
   appointments: Appointment[];
@@ -43,44 +38,69 @@ interface WeekViewProps {
  */
 export function WeekView({ appointments, doctor, weekStartDate }: WeekViewProps) {
   /**
-   * TODO: Generate array of 7 dates (Monday through Sunday)
-   *
-   * Starting from weekStartDate, create an array of the next 7 days
+   * Generate array of 7 dates (Monday through Sunday)
    */
   function getWeekDays(): Date[] {
-    // TODO: Implement week days generation
-    // Example:
-    // return [
-    //   new Date(weekStartDate), // Monday
-    //   addDays(weekStartDate, 1), // Tuesday
-    //   ...
-    //   addDays(weekStartDate, 6), // Sunday
-    // ];
-    return [];
+    const days: Date[] = [];
+    for (let i = 0; i < 7; i++) {
+      days.push(addDays(weekStartDate, i));
+    }
+    return days;
   }
 
   /**
-   * TODO: Generate time slots (same as DayView)
+   * Generate time slots (same as DayView)
    */
-  function generateTimeSlots() {
-    // TODO: Implement (can be same as DayView)
-    return [];
+  function generateTimeSlots(): TimeSlot[] {
+    const slots: TimeSlot[] = [];
+    const { startHour, endHour, slotDuration } = DEFAULT_CALENDAR_CONFIG;
+
+    let currentTime = new Date(weekStartDate);
+    currentTime.setHours(startHour, 0, 0, 0);
+
+    while (currentTime.getHours() < endHour) {
+      const endTime = addDays(currentTime, 0); // Copy date
+      endTime.setMinutes(currentTime.getMinutes() + slotDuration);
+      slots.push({
+        start: new Date(currentTime),
+        end: new Date(endTime),
+        label: format(currentTime, 'h:mm a'),
+      });
+      currentTime = endTime;
+    }
+
+    return slots;
   }
 
   /**
-   * TODO: Get appointments for a specific day
+   * Get appointments for a specific day
    */
   function getAppointmentsForDay(date: Date): Appointment[] {
-    // TODO: Filter appointments that fall on this specific day
-    return [];
+    return appointments.filter(appointment => {
+      const appointmentDate = new Date(appointment.startTime);
+      return isSameDay(appointmentDate, date);
+    });
   }
 
   /**
-   * TODO: Get appointments for a specific day and time slot
+   * Get appointments for a specific day and time slot
    */
   function getAppointmentsForDayAndSlot(date: Date, slotStart: Date): Appointment[] {
-    // TODO: Filter appointments for this day and time
-    return [];
+    const dayAppointments = getAppointmentsForDay(date);
+    const slotEnd = new Date(slotStart);
+    slotEnd.setMinutes(slotStart.getMinutes() + 30);
+
+    return dayAppointments.filter(appointment => {
+      const appointmentStart = new Date(appointment.startTime);
+      const appointmentEnd = new Date(appointment.endTime);
+
+      // Check if appointment overlaps with the slot
+      return (
+        isWithinInterval(appointmentStart, { start: slotStart, end: slotEnd }) ||
+        isWithinInterval(appointmentEnd, { start: slotStart, end: slotEnd }) ||
+        (appointmentStart <= slotStart && appointmentEnd >= slotEnd)
+      );
+    });
   }
 
   const weekDays = getWeekDays();
@@ -91,8 +111,7 @@ export function WeekView({ appointments, doctor, weekStartDate }: WeekViewProps)
       {/* Week header */}
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          {/* TODO: Format week range (e.g., "Oct 14 - Oct 20, 2024") */}
-          Week View
+          {format(weekDays[0], 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}
         </h3>
         {doctor && (
           <p className="text-sm text-gray-600">
@@ -103,25 +122,6 @@ export function WeekView({ appointments, doctor, weekStartDate }: WeekViewProps)
 
       {/* Week grid - may need horizontal scroll on mobile */}
       <div className="border border-gray-200 rounded-lg overflow-x-auto">
-        {/* TODO: Implement the week grid */}
-        <div className="text-center text-gray-500 py-12">
-          <p>Week View Grid Goes Here</p>
-          <p className="text-sm mt-2">
-            Implement 7-day grid (Mon-Sun) with time slots
-          </p>
-
-          {/* Placeholder to show appointments exist */}
-          {appointments.length > 0 && (
-            <div className="mt-4">
-              <p className="text-sm font-medium">
-                {appointments.length} appointment(s) for this week
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* TODO: Replace above with actual grid implementation */}
-        {/* Example structure:
         <table className="min-w-full">
           <thead>
             <tr>
@@ -149,7 +149,6 @@ export function WeekView({ appointments, doctor, weekStartDate }: WeekViewProps)
             ))}
           </tbody>
         </table>
-        */}
       </div>
 
       {/* Empty state */}
@@ -162,8 +161,4 @@ export function WeekView({ appointments, doctor, weekStartDate }: WeekViewProps)
   );
 }
 
-/**
- * TODO: Consider reusing the AppointmentCard component from DayView
- *
- * You might want to add a "compact" prop to make it smaller for week view
- */
+
